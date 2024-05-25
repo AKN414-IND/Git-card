@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUser, faUsers, faCodeBranch, faCalendarAlt, faToggleOn, faToggleOff, faFire, faFileCode
+  faUser, faUsers, faCodeBranch, faCalendarAlt, faFire, faFileCode
 } from '@fortawesome/free-solid-svg-icons';
 
 
