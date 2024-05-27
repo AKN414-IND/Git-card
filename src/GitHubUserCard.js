@@ -6,26 +6,20 @@ import {
   faUser, faUsers, faCodeBranch, faCalendarAlt, faFire, faFileCode
 } from '@fortawesome/free-solid-svg-icons';
 
-
 const GitHubUserCard = () => {
   const { username } = useParams();
   const [userData, setUserData] = useState(null);
   const [languages, setLanguages] = useState([]);
-  const [streak, setStreak] = useState(0); // Example streak data
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const userResponse = await axios.get(`https://api.github.com/users/${username}`);
         setUserData(userResponse.data);
-        setStreak(Math.floor(Math.random() * 100)); // Mocking a streak value
-
         const reposResponse = await axios.get(`https://api.github.com/users/${username}/repos`);
-        const languageCount = reposResponse.data.reduce((acc, repo) => {
-          acc[repo.language] = (acc[repo.language] || 0) + 1;
-          return acc;
-        }, {});
-        setLanguages(Object.entries(languageCount).sort((a, b) => b[1] - a[1]));
+        calculateLanguageStats(reposResponse.data);
+        setStreak(Math.floor(Math.random() * 100)); // Mock streak for demonstration
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -34,45 +28,64 @@ const GitHubUserCard = () => {
     fetchData();
   }, [username]);
 
-  if (!userData) {
-    return <div style={styles.loading}>Loading...</div>;
-  }
+  const calculateLanguageStats = (repos) => {
+    const languageCount = repos.reduce((acc, repo) => {
+      acc[repo.language] = (acc[repo.language] || 0) + 1;
+      return acc;
+    }, {});
+    setLanguages(Object.entries(languageCount).sort((a, b) => b[1] - a[1]));
+  };
+
+  if (!userData) return <div style={styles.loading}>Loading...</div>;
 
   return (
     <div style={styles.card}>
-      <div style={styles.header}>
-        <img src={userData.avatar_url} alt="avatar" style={styles.avatar} />
-        <div style={styles.userInfo}>
-          <h2 style={styles.name}>{userData.name || userData.login}</h2>
-          <p style={styles.login}>@{userData.login}</p>
-          {userData.bio && <p style={styles.bio}>{userData.bio}</p>}
-        </div>
-      </div>
-      <div style={styles.stats}>
-        <div style={styles.statItem}><FontAwesomeIcon icon={faCodeBranch} /> {userData.public_repos} Repos</div>
-        <div style={styles.statItem}><FontAwesomeIcon icon={faUsers} /> {userData.followers} Followers</div>
-        <div style={styles.statItem}><FontAwesomeIcon icon={faUser} /> {userData.following} Following</div>
-        <div style={styles.statItem}><FontAwesomeIcon icon={faFileCode} /> {userData.public_gists} Gists</div>
-        <div style={styles.statItem}><FontAwesomeIcon icon={faCalendarAlt} /> Joined {new Date(userData.created_at).toLocaleDateString()}</div>
-      </div>
-      <div style={styles.languages}>
-        <h3>Top Languages</h3>
-          {languages.map(([language, count]) => (
-            
-
-            <div key={language} style={styles.languageItem}>{language}: {count} repos</div>
-          ))}
-      </div>
-      <div style={styles.streak}>
-  <FontAwesomeIcon icon={faFire} /> <strong>Coding Streak:</strong> {streak} days
-</div>
-
-      <button style={styles.profileButton} onClick={() => window.open(userData.html_url, '_blank')}>
+      <UserProfile userData={userData} />
+      <UserStats userData={userData} languages={languages} streak={streak} />
+      <div style={styles.profileButton} onClick={() => window.open(userData.html_url, '_blank')}>
         View GitHub Profile
-      </button>
+      </div>
     </div>
   );
 };
+
+const UserProfile = ({ userData }) => (
+  <div style={styles.header}>
+    <img src={userData.avatar_url} alt="avatar" style={styles.avatar} />
+    <div style={styles.userInfo}>
+      <h2 style={styles.name}>{userData.name || userData.login}</h2>
+      <p style={styles.login}>@{userData.login}</p>
+      {userData.bio && <p style={styles.bio}>{userData.bio}</p>}
+    </div>
+  </div>
+);
+
+const UserStats = ({ userData, languages, streak }) => (
+  <div>
+    <div style={styles.stats}>
+      <StatItem icon={faCodeBranch} value={userData.public_repos} label="Repos" />
+      <StatItem icon={faUsers} value={userData.followers} label="Followers" />
+      <StatItem icon={faUser} value={userData.following} label="Following" />
+      <StatItem icon={faFileCode} value={userData.public_gists} label="Gists" />
+      <StatItem icon={faCalendarAlt} value={new Date(userData.created_at).toLocaleDateString()} label="Joined" />
+    </div>
+    <div style={styles.languages}>
+      <h3>Top Languages</h3>
+      {languages.map(([language, count]) => (
+        <div key={language} style={styles.languageItem}>{language}: {count} repos</div>
+      ))}
+    </div>
+    <div style={styles.streak}>
+      <FontAwesomeIcon icon={faFire} /> <strong>Coding Streak:</strong> {streak} days
+    </div>
+  </div>
+);
+
+const StatItem = ({ icon, value, label }) => (
+  <div style={styles.statItem}>
+    <FontAwesomeIcon icon={icon} /> {value} {label}
+  </div>
+);
 
 const styles = {
   card: {
@@ -82,7 +95,7 @@ const styles = {
     maxWidth: '600px',
     margin: '40px auto',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontFamily: 'Arial, sans-serif',
     backgroundColor: '#fff',
     color: '#333',
     textAlign: 'left',
@@ -99,7 +112,7 @@ const styles = {
     width: '120px',
     height: '120px',
     marginRight: '20px',
-    border: '3px solid #007bff', // Matching the button color
+    border: '3px solid #007bff',
   },
   userInfo: {
     flex: 1,
@@ -108,7 +121,7 @@ const styles = {
     margin: '0',
     fontSize: '26px',
     fontWeight: 'bold',
-    color: '#007bff', // Blue accent for the name
+    color: '#007bff',
   },
   login: {
     margin: '0',
@@ -134,7 +147,7 @@ const styles = {
     borderRadius: '10px',
     boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.05)',
     textAlign: 'center',
-    lineHeight: '1.4', // Improved line height for better readability
+    lineHeight: '1.4',
   },
   languages: {
     marginBottom: '20px',
@@ -151,7 +164,7 @@ const styles = {
     padding: '12px',
     margin: '10px 0',
     borderRadius: '10px',
-    backgroundColor: '#ffc107', // Golden color for the streak
+    backgroundColor: '#ffc107',
     color: '#333',
     boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
   },
@@ -167,9 +180,9 @@ const styles = {
     textDecoration: 'none',
     textAlign: 'center',
     margin: '20px 0',
-    transition: 'background-color 0.3s', // Smooth transition for hover effect
+    transition: 'background-color 0.3s',
     ':hover': {
-      backgroundColor: '#0056b3' // Darker blue on hover
+      backgroundColor: '#0056b3',
     }
   }
 };

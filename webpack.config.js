@@ -1,11 +1,10 @@
-// Example webpack.config.js snippet showing a simple setup
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require('path');
 
 module.exports = {
   entry: './src/index.js',
   output: {
-    path: __dirname + '/dist',
     filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [
@@ -14,18 +13,19 @@ module.exports = {
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-react'],
-          },
         },
       },
-      // Add other rules for different file types if necessary
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
+      },
+      {
+        test: /\.js$/,
+        enforce: 'pre',
+        use: ['source-map-loader'],
+        exclude: /node_modules\/bootstrap/,
+      },
     ],
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: './public/index.html',  // Ensure this path is correct
-    }),
-  ],
-  // Include other configurations like devServer if using webpack-dev-server
+  devtool: 'source-map',
 };
